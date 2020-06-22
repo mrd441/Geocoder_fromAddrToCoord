@@ -14,6 +14,8 @@ using System.Xml;
 using System.Diagnostics;
 using System.IO;
 using Excel = Microsoft.Office.Interop.Excel;
+using System.Runtime.InteropServices;
+using System.Globalization;
 
 namespace OSM_Geocoding
 {
@@ -98,7 +100,7 @@ namespace OSM_Geocoding
 
             pictureBox1.Visible = false;
             useProxy = true;
-            reqestDelay = 200;
+            reqestDelay = 1000;
             numericUpDown1.Value = reqestDelay;
 
             this.AllowDrop = true;
@@ -286,8 +288,14 @@ namespace OSM_Geocoding
                     //geocode-maps.yandex.ru/1.x/?apikey=d4a52bbe-5323-4938-ad75-d228bf49210b&geocode=47.595025,42.095995
                     var uri = "/1.x/?";
                     string apiKey = "d4a52bbe-5323-4938-ad75-d228bf49210b";
-                    uri = uri + "apikey=" + apiKey + "&geocode=" + aAddressListElement.longit + "," + aAddressListElement.latid;
 
+                    //string alat = aAddressListElement.latid.Contains("°") ? convertGrad(aAddressListElement.latid) : aAddressListElement.latid;
+                    //string alog = aAddressListElement.longit.Contains("°") ? convertGrad(aAddressListElement.longit) : aAddressListElement.longit;
+                    //uri = uri + "&lat=" + alat;
+                    //uri = uri + "&lon=" + alog;
+                    //uri = uri + "apikey=" + apiKey + "&geocode=" + alog + "," + alat;
+                    uri = uri + "apikey=" + apiKey + "&geocode=" + aAddressListElement.longit + "," + aAddressListElement.latid;
+                    uri = uri.Replace(" ", "");
                     var response = await client.GetAsync(uri);
 
                     if (response.IsSuccessStatusCode)
@@ -349,16 +357,19 @@ namespace OSM_Geocoding
                         aAddressListElement.road = road;
                         aAddressListElement.house_number = house_number;
                         aAddressListElement.Checked = true;
+                        checkedAddresses++;
                         aAddressListElement.isChecking = false;
                         addressList[addressIndex] = aAddressListElement;
                         addressListElementBindingSource.ResetItem(addressIndex);                        
-                        checkedAddresses++;
+                        
                     }
                 }
                 else
                 {
                     aAddressListElement.Checked = true;
                     checkedAddresses++;
+                    addressList[addressIndex] = aAddressListElement;
+                    addressListElementBindingSource.ResetItem(addressIndex);
                 }
             }
             catch(Exception ex)
@@ -402,13 +413,14 @@ namespace OSM_Geocoding
                     client.Timeout = TimeSpan.FromMilliseconds(3000);
 
                     //nominatim.openstreetmap.org/reverse?lat=42.095995&lon=47.595025&accept-language=ru&zoom=18&email=441-05@mail.ru&addressdetails=1format=xml nominatim.openstreetmap.org/reverse?accept-language=ru&zoom=18&format=xml&lat=44.948674&lon=45.854249
-
+                    //nominatim.openstreetmap.org/reverse?accept-language=ru&zoom=18&format=xml&lat=41.882855&lon=48.072434"
 
                     var uri = "/reverse?accept-language=ru&zoom=18&format=xml";
-
-                    uri = uri + "&lat=" + aAddressListElement.latid;
-                    uri = uri + "&lon=" + aAddressListElement.longit;
-
+                    string alat = aAddressListElement.latid.Contains("°")? convertGrad(aAddressListElement.latid) : aAddressListElement.latid;
+                    string alog = aAddressListElement.longit.Contains("°") ? convertGrad(aAddressListElement.longit) : aAddressListElement.longit;
+                    uri = uri + "&lat=" + alat;
+                    uri = uri + "&lon=" + alog;
+                    uri = uri.Replace(" ", "");
                     try
                     {
                         var response = await client.GetAsync(uri);
@@ -422,7 +434,7 @@ namespace OSM_Geocoding
                                 doc.LoadXml(responseString);
                                 var hamlet = checkXmlNode(doc.DocumentElement.SelectSingleNode("/reversegeocode/addressparts/hamlet"));
                                 var city = checkXmlNode(doc.DocumentElement.SelectSingleNode("/reversegeocode/addressparts/city"));
-                                var county = checkXmlNode(doc.DocumentElement.SelectSingleNode("/reversegeocode/addressparts/county"));                                
+                                var county = checkXmlNode(doc.DocumentElement.SelectSingleNode("/reversegeocode/addressparts/county"));
 
                                 var road = checkXmlNode(doc.DocumentElement.SelectSingleNode("/reversegeocode/addressparts/road"));
                                 var house_number = checkXmlNode(doc.DocumentElement.SelectSingleNode("/reversegeocode/addressparts/house_number"));
@@ -458,7 +470,15 @@ namespace OSM_Geocoding
                             }
                         }
                         else
+                        {
+                            if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                            {
+                                aAddressListElement.Checked = true;
+                                checkedAddresses++;
+                            }
+                            loging(2, "Ошибка запроса, проверьте координаты в строке " + aAddressListElement.row);
                             Console.WriteLine(response.StatusCode);
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -494,6 +514,16 @@ namespace OSM_Geocoding
                 addressList[addressIndex] = aAddressListElement;
                 addressListElementBindingSource.ResetItem(addressIndex);
             }
+        }
+
+        public string convertGrad(string grad)
+        {
+            string[] alast = grad.Split('\'');
+            string[] afirst = alast.First().Split('°');
+            float seconds = float.Parse(alast.Last(), CultureInfo.InvariantCulture.NumberFormat);
+            float minuts = int.Parse(afirst.Last(), CultureInfo.InvariantCulture.NumberFormat);
+            int grads = int.Parse(afirst.First());
+            return (grads + minuts/60 + seconds/3600).ToString().Replace(",",".");
         }
 
         static string checkXmlNode(XmlNode axmlNode)
@@ -542,6 +572,11 @@ namespace OSM_Geocoding
 
         public void loging(int level, string text)
         {
+            if (InvokeRequired)
+            {
+                this.Invoke(new Action<int,string>(loging), new object[] { level, text });
+                return;
+            }
             var aColor = Color.Black;
             if (level == 1)
                 aColor = Color.Green;
