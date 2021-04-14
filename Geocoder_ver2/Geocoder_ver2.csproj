@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{265D13F6-312E-4C4D-BF00-BEE56BF22E06}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>Geocoder_ver2</RootNamespace>
-    <AssemblyName>Geocoder_ver2</AssemblyName>
+    <RootNamespace>Geocoder_fromAddrToCoord</RootNamespace>
+    <AssemblyName>Geocoder_fromAddrToCoord</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -68,6 +68,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <None Include="packages.config" />
     <None Include="Properties\DataSources\OSM_Geocoding.Form1+AddressListElement.datasource" />

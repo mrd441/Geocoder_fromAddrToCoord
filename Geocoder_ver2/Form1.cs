@@ -39,6 +39,7 @@ namespace OSM_Geocoding
             public string city { get; set; }
             public string road { get; set; }
             public string house_number { get; set; }
+            public string corp { get; set; }
             public bool isChecking { get; set; }
             public bool Checked { get; set; }
         }
@@ -610,10 +611,16 @@ namespace OSM_Geocoding
                 {
                     if (arrData[i, 17] != null && arrData[i, 18] != null)
                     {
-                        AddressListElement aAddressListElement = new AddressListElement();
+                        string city = getStringFromXML(arrData[i, 5]);
+                        string[] addr = getAddr(getStringFromXML(arrData[i, 6]));
+
+                        AddressListElement aAddressListElement = new AddressListElement();                        
+                        aAddressListElement.city = addr[0];
+                        aAddressListElement.house_number = addr[1];
+                        aAddressListElement.corp = addr[3];
                         aAddressListElement.row = i;
-                        aAddressListElement.latid = getStringFromXML(arrData[i, 17]).Replace(',', '.');
-                        aAddressListElement.longit = getStringFromXML(arrData[i, 18]).Replace(',', '.');                        
+                        //aAddressListElement.latid = getStringFromXML(arrData[i, 17]).Replace(',', '.');
+                        //aAddressListElement.longit = getStringFromXML(arrData[i, 18]).Replace(',', '.');                        
                         addressList.Add(aAddressListElement);
                     }
                 }
@@ -632,6 +639,78 @@ namespace OSM_Geocoding
             {
                 throw new Exception("Ошибка загрузки Excel файла: " + ex.Message);
             }
+        }
+
+        private string[] getAddr(string fullAddr)
+        {
+            string[] splitaddr = fullAddr.ToLower().Split(',');
+            string street = "";
+            string corp = "";
+            string house = "";
+            if (splitaddr.Length > 0)
+                street = splitaddr[0];
+
+            foreach (string a in splitaddr)
+            {            
+                if (a.Contains("корпус"))
+                {
+                    int pos = a.IndexOf("корпус");
+                    corp = "к" + a.Substring(pos + 6, a.Length - pos - 6).Trim();
+                }
+                else if(a.Contains("корп"))
+                {
+                    int pos = a.IndexOf("корп");
+                    corp = "к" + a.Substring(pos + 4, a.Length - pos - 4).Trim();
+                }
+
+                if (a.Contains("д. "))
+                {
+                    house = a.Replace("д. ", "").ToLower();
+                    if (a.Contains("позиция"))
+                        house = house.Substring(0, house.IndexOf("позиция")).Trim();
+                }
+
+                if (a.Contains("(р-он "))
+                    street = a.Substring(0, a.IndexOf("(р-он ")).Trim();
+                else if (a.Contains("(р-н "))
+                    street = a.Substring(0, a.IndexOf("(р-н ")).Trim();
+                else if (a.Contains("р-н "))
+                    street = a.Substring(0, a.IndexOf("р-н ")).Trim();
+                else if (a.Contains("р-он "))
+                    street = a.Substring(0, a.IndexOf("р-он ")).Trim();
+                else if (a.Contains("район "))
+                    street = a.Substring(0, a.IndexOf("район ")).Trim();
+
+                if (a.Contains("С/О ") && a.Contains("("))
+                {
+                    int pos = a.IndexOf("(");
+                    street = a.Substring(pos + 1, a.Length - pos - 2).Trim();
+                }
+                
+                if (a.Contains("туп "))
+                {
+                    int pos = a.IndexOf("туп ");
+                    street = a.Substring(pos + 4, a.Length - pos - 4).Trim();
+                }
+                else if (a.Contains("ул "))
+                {
+                    int pos = a.IndexOf("ул ");
+                    street = a.Substring(pos + 3, a.Length - pos - 3).Trim();
+                }
+                else if (a.Contains("ул."))
+                {
+                    int pos = a.IndexOf("ул.");
+                    street = a.Substring(pos + 3, a.Length - pos - 3).Trim();
+                }
+                else if (a.Contains("пр-кт "))
+                {
+                    int pos = a.IndexOf("пр-кт ");
+                    street = a.Substring(pos + 6, a.Length - pos - 6).Trim();
+                }
+            }
+            if (street.Contains("нет данных") || street.Contains("д.") || street.Contains("кв."))
+                street = "";
+            return new string[] {street, house, corp };
         }
 
         private string getStringFromXML(object data)
