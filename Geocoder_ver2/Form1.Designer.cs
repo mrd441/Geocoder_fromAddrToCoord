@@ -45,6 +45,7 @@
             this.dataGridViewTextBoxColumn29 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.dataGridViewTextBoxColumn30 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.corpDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.curSystem = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.dataGridViewCheckBoxColumn7 = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             this.dataGridViewCheckBoxColumn8 = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             this.valid = new System.Windows.Forms.DataGridViewCheckBoxColumn();
@@ -68,8 +69,9 @@
             this.radioButtonOSM = new System.Windows.Forms.RadioButton();
             this.radioButtonYa = new System.Windows.Forms.RadioButton();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.yaAPIkey = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
+            this.yaAPIkey = new System.Windows.Forms.TextBox();
+            this.radioButtonDual = new System.Windows.Forms.RadioButton();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.proxyListElementBindingSource)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView2)).BeginInit();
@@ -157,6 +159,7 @@
             this.dataGridViewTextBoxColumn29,
             this.dataGridViewTextBoxColumn30,
             this.corpDataGridViewTextBoxColumn,
+            this.curSystem,
             this.dataGridViewCheckBoxColumn7,
             this.dataGridViewCheckBoxColumn8,
             this.valid,
@@ -229,6 +232,14 @@
             this.corpDataGridViewTextBoxColumn.Name = "corpDataGridViewTextBoxColumn";
             this.corpDataGridViewTextBoxColumn.ReadOnly = true;
             this.corpDataGridViewTextBoxColumn.Width = 40;
+            // 
+            // curSystem
+            // 
+            this.curSystem.DataPropertyName = "curSystem";
+            this.curSystem.HeaderText = "Запрос";
+            this.curSystem.Name = "curSystem";
+            this.curSystem.ReadOnly = true;
+            this.curSystem.Width = 50;
             // 
             // dataGridViewCheckBoxColumn7
             // 
@@ -445,6 +456,7 @@
             // 
             // groupBox1
             // 
+            this.groupBox1.Controls.Add(this.radioButtonDual);
             this.groupBox1.Controls.Add(this.label1);
             this.groupBox1.Controls.Add(this.yaAPIkey);
             this.groupBox1.Controls.Add(this.pictureBox1);
@@ -464,13 +476,6 @@
             this.groupBox1.TabIndex = 27;
             this.groupBox1.TabStop = false;
             // 
-            // yaAPIkey
-            // 
-            this.yaAPIkey.Location = new System.Drawing.Point(95, 206);
-            this.yaAPIkey.Name = "yaAPIkey";
-            this.yaAPIkey.Size = new System.Drawing.Size(266, 20);
-            this.yaAPIkey.TabIndex = 26;
-            // 
             // label1
             // 
             this.label1.AutoSize = true;
@@ -479,6 +484,26 @@
             this.label1.Size = new System.Drawing.Size(83, 13);
             this.label1.TabIndex = 27;
             this.label1.Text = "Yandex API key";
+            // 
+            // yaAPIkey
+            // 
+            this.yaAPIkey.Location = new System.Drawing.Point(95, 206);
+            this.yaAPIkey.Name = "yaAPIkey";
+            this.yaAPIkey.Size = new System.Drawing.Size(266, 20);
+            this.yaAPIkey.TabIndex = 26;
+            this.yaAPIkey.Text = "c0d403ab-e5be-4049-908c-8122a58acf23";
+            // 
+            // radioButtonDual
+            // 
+            this.radioButtonDual.AutoSize = true;
+            this.radioButtonDual.Location = new System.Drawing.Point(128, 183);
+            this.radioButtonDual.Name = "radioButtonDual";
+            this.radioButtonDual.Size = new System.Drawing.Size(47, 17);
+            this.radioButtonDual.TabIndex = 28;
+            this.radioButtonDual.TabStop = true;
+            this.radioButtonDual.Text = "Dual";
+            this.radioButtonDual.UseVisualStyleBackColor = true;
+            this.radioButtonDual.CheckedChanged += new System.EventHandler(this.radioButtonDual_CheckedChanged);
             // 
             // Form1
             // 
@@ -585,6 +610,8 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn33;
         private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn34;
         private System.Windows.Forms.DataGridViewCheckBoxColumn dataGridViewCheckBoxColumn9;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.TextBox yaAPIkey;
         private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn25;
         private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn26;
         private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn27;
@@ -593,12 +620,12 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn29;
         private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn30;
         private System.Windows.Forms.DataGridViewTextBoxColumn corpDataGridViewTextBoxColumn;
+        private System.Windows.Forms.DataGridViewTextBoxColumn curSystem;
         private System.Windows.Forms.DataGridViewCheckBoxColumn dataGridViewCheckBoxColumn7;
         private System.Windows.Forms.DataGridViewCheckBoxColumn dataGridViewCheckBoxColumn8;
         private System.Windows.Forms.DataGridViewCheckBoxColumn valid;
         private System.Windows.Forms.DataGridViewTextBoxColumn fullAddress;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.TextBox yaAPIkey;
+        private System.Windows.Forms.RadioButton radioButtonDual;
     }
 }
 

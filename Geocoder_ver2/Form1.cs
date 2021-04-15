@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 using System.Windows.Forms;
 
 using System.Net;
@@ -209,7 +210,7 @@ namespace OSM_Geocoding
                             {
                                 //Task aTask = Task.Run(() => reverseGeocoding(j, curentProxyIndex));
                                 Task aTask;
-                                aTask = usingService == "yandex"? Task.Run(() => reverseGeocodinYandex(j, false)) : Task.Run(() => reverseGeocoding(j, curentProxyIndex));
+                                aTask = (usingService == "yandex" || usingService == "dual") ? Task.Run(() => reverseGeocodinYandex(j, false, curentProxyIndex)) : Task.Run(() => reverseGeocoding(j, curentProxyIndex));
                                 
                                 workers.Add(aTask);
                                 await Task.Delay(10);
@@ -267,7 +268,7 @@ namespace OSM_Geocoding
             
         }
 
-        async Task reverseGeocodinYandex(int addressIndex, bool CheckCity)
+        async Task reverseGeocodinYandex(int addressIndex, bool CheckCity, int proxyIndex)
         {
             AddressListElement aAddressListElement = addressList[addressIndex];
             aAddressListElement.isChecking = true;
@@ -275,6 +276,7 @@ namespace OSM_Geocoding
             addressList[addressIndex] = aAddressListElement;
             addressListElementBindingSource.ResetItem(addressIndex);
             checkingAddresses++;
+            bool valid = false;
             try
             {
                 if (aAddressListElement.city != null & aAddressListElement.city != "" & aAddressListElement.road != null & aAddressListElement.road != "")
@@ -286,7 +288,7 @@ namespace OSM_Geocoding
                     client.DefaultRequestHeaders.Add("User-Agent", "C# console program");
                     client.Timeout = TimeSpan.FromMilliseconds(3000);
 
-                    //geocode-maps.yandex.ru/1.x/?apikey=d4a52bbe-5323-4938-ad75-d228bf49210b&geocode=47.595025,42.095995
+                    //geocode-maps.yandex.ru/1.x/?apikey=57896752-ae5f-4443-9614-7a4b17678d35&results=5&geocode=гМахачкала+авиационная(керимова)+5+к2
                     //c0d403ab-e5be-4049-908c-8122a58acf23
                     //57896752-ae5f-4443-9614-7a4b17678d35
                     var uri = "/1.x/?";
@@ -348,36 +350,85 @@ namespace OSM_Geocoding
                         if (hamlet != "")
                             area = hamlet;
 
-                        bool valid = (aAddressListElement.house_number + aAddressListElement.corp).Replace(" ", "") == house_number.Replace(" ", "").ToLower();
-                        aAddressListElement.fullAddress = hamlet + ", " + road + ", " + house_number;
-                        aAddressListElement.latid = lat;
-                        aAddressListElement.longit = lon;
-                        aAddressListElement.valid = valid
-                        addressListElementBindingSource.ResetItem(addressIndex);
+                        house_number = house_number.Replace(" ", "").ToLower();
+                        string curHauseNum = (aAddressListElement.road + aAddressListElement.house_number + aAddressListElement.corp).Replace(" ", "");
+                        curHauseNum = curHauseNum.Substring(curHauseNum.Length - house_number.Length);
 
-                        aAddressListElement.Checked = true;
-                        checkedAddresses++;
-                        aAddressListElement.isChecking = false;
-                        addressList[addressIndex] = aAddressListElement;
-                        addressListElementBindingSource.ResetItem(addressIndex);                        
+                        valid = (curHauseNum == house_number && house_number!="");
+                        aAddressListElement.fullAddress = hamlet + ", " + road + ", " + house_number;
                         
+                        aAddressListElement.valid = valid;
+                        addressList[addressIndex] = aAddressListElement;
+                        addressListElementBindingSource.ResetItem(addressIndex);
+                        if (!valid && usingService == "dual")
+                        {
+                            await Task.Run(() => reverseGeocoding(addressIndex, proxyIndex));
+                        }
+                        else
+                        {
+                            aAddressListElement.latid = lat;
+                            aAddressListElement.longit = lon;
+                            aAddressListElement.Checked = true;
+                            checkedAddresses++;
+                            aAddressListElement.isChecking = false;
+                            addressList[addressIndex] = aAddressListElement;
+                            addressListElementBindingSource.ResetItem(addressIndex);
+                        }
+                        
+                    }
+                    else
+                    {
+                        var responseString = await response.Content.ReadAsStringAsync();
+                        XmlDocument doc = new XmlDocument();
+                        doc.LoadXml(responseString);
+                        XmlNodeList nodeList = doc.GetElementsByTagName("message");
+                        string message = "";
+                        if (nodeList != null && nodeList.Count > 0)
+                            message = nodeList[0].InnerText;
+                        if (message == "Invalid key")
+                            loging(2, "Ошибка запроса " + aAddressListElement.row + ". Недействиетльный ключ Yandex API");
+                        else if (message != "")
+                            loging(2, "Ошибка запроса " + aAddressListElement.row + ". " + message);
+                        else
+                            loging(2, "Ошибка запроса " + aAddressListElement.row + ". " + responseString);
+
+                        if (usingService == "dual")
+                            await Task.Run(() => reverseGeocoding(addressIndex, proxyIndex));
+                        else
+                        {
+                            aAddressListElement.Checked = true;
+                            checkedAddresses++;
+                            aAddressListElement.isChecking = false;
+                            addressList[addressIndex] = aAddressListElement;
+                            addressListElementBindingSource.ResetItem(addressIndex);
+                        }
                     }
                 }
                 else
                 {
-                    aAddressListElement.Checked = true;
-                    aAddressListElement.isChecking = false;
-                    checkedAddresses++;
-                    addressList[addressIndex] = aAddressListElement;
-                    addressListElementBindingSource.ResetItem(addressIndex);
+                    if (usingService == "dual")
+                        await Task.Run(() => reverseGeocoding(addressIndex, proxyIndex));
+                    else
+                    {
+                        aAddressListElement.Checked = true;
+                        aAddressListElement.isChecking = false;
+                        checkedAddresses++;
+                        addressList[addressIndex] = aAddressListElement;
+                        addressListElementBindingSource.ResetItem(addressIndex);
+                    }
                 }
             }
             catch(Exception ex)
             {
-                aAddressListElement.Checked = false;
-                aAddressListElement.isChecking = false;
-                addressList[addressIndex] = aAddressListElement;
-                addressListElementBindingSource.ResetItem(addressIndex);
+                if (usingService == "dual")
+                    await Task.Run(() => reverseGeocoding(addressIndex, proxyIndex));
+                else
+                {
+                    aAddressListElement.Checked = false;
+                    aAddressListElement.isChecking = false;
+                    addressList[addressIndex] = aAddressListElement;
+                    addressListElementBindingSource.ResetItem(addressIndex);
+                }
             }            
         }
 
@@ -399,14 +450,14 @@ namespace OSM_Geocoding
         {
             try
             {
-                var stopWatch = Stopwatch.StartNew();
-
+                long curStopWatch = 0;
                 //var proxy = new WebProxy("88.247.153.104", 8080);
                 ProxyListElement aProxyListElement = proxyLixt[proxyIndex];
                 var proxy = aProxyListElement.proxy;
 
                 AddressListElement aAddressListElement = addressList[addressIndex];
                 aAddressListElement.isChecking = true;
+                aAddressListElement.curSystem = "OSM";
                 addressList[addressIndex] = aAddressListElement;
                 addressListElementBindingSource.ResetItem(addressIndex);
                 checkingAddresses++;
@@ -442,7 +493,26 @@ namespace OSM_Geocoding
                     uri = uri.Replace(" ", "+");
                     try
                     {
+                        if (!useProxy)
+                        {
+                            int maxOsmTimeOut = 1001;
+                            long curOsmTimestamp = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
+                            long timeDiff = curOsmTimestamp - lastOsmTimestamp;
+                            if (timeDiff < maxOsmTimeOut)
+                            {
+                                lastOsmTimestamp = curOsmTimestamp + (maxOsmTimeOut - timeDiff);
+                                Thread.Sleep(maxOsmTimeOut - Convert.ToInt32(timeDiff));
+                            }
+                            else
+                                lastOsmTimestamp = curOsmTimestamp;
+
+                        }
+
+                        curStopWatch = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
+
                         var response = await client.GetAsync(uri);
+
+                        curStopWatch = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond - curStopWatch;
 
                         if (response.IsSuccessStatusCode)
                         {
@@ -450,23 +520,52 @@ namespace OSM_Geocoding
                             XmlDocument doc = new XmlDocument();
                             try
                             {
+                                string dname = "0";
+                                string lat = "0";
+                                string lon = "0";
+                                string address_rank = "0";//house
+                                string type = "0";//house
+                                string classT = "0" ;//class="building"
+
                                 doc.LoadXml(responseString);
-                                var nameNode = doc.DocumentElement.SelectSingleNode("/searchresults/place");
-                                string dname = (nameNode == null) ? "" : nameNode.Attributes.GetNamedItem("display_name").Value;
-
-                                nameNode = doc.DocumentElement.SelectSingleNode("/searchresults/place");
-                                string lat = (nameNode == null) ? "" : nameNode.Attributes.GetNamedItem("lat").Value;
-
-                                nameNode = doc.DocumentElement.SelectSingleNode("/searchresults/place");
-                                string lon = (nameNode == null) ? "" : nameNode.Attributes.GetNamedItem("lon").Value;
-
-                                nameNode = doc.DocumentElement.SelectSingleNode("/searchresults/place");
-                                string address_rank = (nameNode == null) ? "0" : nameNode.Attributes.GetNamedItem("address_rank").Value;//house
+                                XmlNodeList nameNodes = doc.DocumentElement.SelectNodes("/searchresults/place");
+                                foreach (XmlNode nameNode in nameNodes)
+                                {
+                                    type = nameNode.Attributes.GetNamedItem("type").Value;//house
+                                    classT = nameNode.Attributes.GetNamedItem("class").Value;//class="building"
+                                    if (classT == "building")
+                                    {
+                                        dname = nameNode.Attributes.GetNamedItem("display_name").Value;
+                                        lat = nameNode.Attributes.GetNamedItem("lat").Value;
+                                        lon = nameNode.Attributes.GetNamedItem("lon").Value;
+                                        address_rank = nameNode.Attributes.GetNamedItem("address_rank").Value;//house
+                                        break;
+                                    }                                    
+                                }
 
                                 aAddressListElement.latid = lat;
                                 aAddressListElement.longit = lon;
                                 aAddressListElement.fullAddress = dname;
-                                aAddressListElement.valid = (Convert.ToInt32(address_rank)>27);
+
+                                string houseNum = "*";
+                                int address_rankI = 0;
+                                try { address_rankI = Convert.ToInt32(address_rank); }
+                                catch { }
+
+                                if (address_rankI > 27)
+                                {
+                                    string[] dnameSplit = dname.Split(',');
+                                    if (classT == "building" && dnameSplit.Count() > 0)
+                                        houseNum = dnameSplit[0];
+                                    else if(classT != "building" && dnameSplit.Count() > 1)
+                                        houseNum = dnameSplit[1];
+                                }
+
+                                houseNum = houseNum.Replace(" ", "").ToLower();
+                                string curHauseNum = (aAddressListElement.road + aAddressListElement.house_number + aAddressListElement.corp).Replace(" ", "");
+                                curHauseNum = curHauseNum.Substring(curHauseNum.Length - houseNum.Length);
+
+                                aAddressListElement.valid = curHauseNum == houseNum;
 
                                 aAddressListElement.Checked = true;
                                 checkedAddresses++;
@@ -484,7 +583,7 @@ namespace OSM_Geocoding
                                 aAddressListElement.Checked = true;
                                 checkedAddresses++;
                             }
-                            loging(2, "Ошибка запроса, проверьте координаты в строке " + aAddressListElement.row);
+                            loging(2, "Ошибка запроса " + aAddressListElement.row + ". " + client.BaseAddress + uri);
                             Console.WriteLine(response.StatusCode);
                         }
                     }
@@ -495,10 +594,9 @@ namespace OSM_Geocoding
                         Console.WriteLine(ex.Message);
                     }
 
-                    long responseTime = stopWatch.ElapsedMilliseconds;
                     aAddressListElement.isChecking = false;
 
-                    aProxyListElement.responseTime = responseTime;
+                    aProxyListElement.responseTime = curStopWatch;
                     proxyLixt[proxyIndex] = aProxyListElement;
                     proxyListElementBindingSource.ResetItem(proxyIndex);
 
@@ -872,6 +970,13 @@ namespace OSM_Geocoding
             reqestDelay = Decimal.ToInt32(numericUpDown1.Value);
         }
 
+        private void radioButtonDual_CheckedChanged(object sender, EventArgs e)
+        {
+            usingService = "dual";
+            numericUpDown1.Value = 300;
+            reqestDelay = Decimal.ToInt32(numericUpDown1.Value);
+        }
+
         private void dataGridView2_DataError(object sender, DataGridViewDataErrorEventArgs e)
         {
 
@@ -892,6 +997,8 @@ namespace OSM_Geocoding
             if (listBox1.SelectedItems.Count > 0)
                 listBox1.Items.Remove(listBox1.SelectedItem);
         }
+
+        
     }
 }
 public static class RichTextBoxExtensions
