@@ -68,6 +68,8 @@
             this.radioButtonOSM = new System.Windows.Forms.RadioButton();
             this.radioButtonYa = new System.Windows.Forms.RadioButton();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.yaAPIkey = new System.Windows.Forms.TextBox();
+            this.label1 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.proxyListElementBindingSource)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView2)).BeginInit();
@@ -443,6 +445,8 @@
             // 
             // groupBox1
             // 
+            this.groupBox1.Controls.Add(this.label1);
+            this.groupBox1.Controls.Add(this.yaAPIkey);
             this.groupBox1.Controls.Add(this.pictureBox1);
             this.groupBox1.Controls.Add(this.listBox1);
             this.groupBox1.Controls.Add(this.deleteXML);
@@ -459,6 +463,22 @@
             this.groupBox1.Size = new System.Drawing.Size(419, 231);
             this.groupBox1.TabIndex = 27;
             this.groupBox1.TabStop = false;
+            // 
+            // yaAPIkey
+            // 
+            this.yaAPIkey.Location = new System.Drawing.Point(95, 206);
+            this.yaAPIkey.Name = "yaAPIkey";
+            this.yaAPIkey.Size = new System.Drawing.Size(266, 20);
+            this.yaAPIkey.TabIndex = 26;
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(6, 209);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(83, 13);
+            this.label1.TabIndex = 27;
+            this.label1.Text = "Yandex API key";
             // 
             // Form1
             // 
@@ -577,6 +597,8 @@
         private System.Windows.Forms.DataGridViewCheckBoxColumn dataGridViewCheckBoxColumn8;
         private System.Windows.Forms.DataGridViewCheckBoxColumn valid;
         private System.Windows.Forms.DataGridViewTextBoxColumn fullAddress;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.TextBox yaAPIkey;
     }
 }
 
